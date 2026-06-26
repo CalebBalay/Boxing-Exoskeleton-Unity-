@@ -1,111 +1,93 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using WiimoteApi;
+using extOSC;
 
 public class WiiMoteTest : MonoBehaviour
 {
+    OSCReceiver receiver;
 
-    Wiimote remoteL;
-    private int calCount = 0;
-    InputAction enter;
     public GameObject con;
-    public Vector3 speedMod;
-    public float accelThreshold;
-    Vector3 oldAccel;
-    Vector3 newAccel;
-    Vector3 accelDif;
+    public Vector3 accelMod;
+
     Rigidbody conRB;
-    Transform conTR;
-    public int updateBuffer;
-    int updateCount = 0;
-    bool rumble = false;
+
+    Vector3 accelData;
+    Vector3 gyroData;
+    bool accelUpdated;
+    bool gyroUpdated;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        enter = InputSystem.actions.FindAction("Enter");
-        WiimoteManager.FindWiimotes();
-        foreach(Wiimote remote in WiimoteManager.Wiimotes) {
-            print("wiimote found!");
-        }
-        remoteL = WiimoteManager.Wiimotes[0];
-        print(remoteL.Type);
-        print(remoteL.ActivateWiiMotionPlus());
-        remoteL.SendDataReportMode(InputDataType.REPORT_BUTTONS_ACCEL_EXT16);
-
-        print(remoteL.SendPlayerLED(false, false, false, false));
-        //print(remoteL.SendStatusInfoRequest());
-        //print(remoteL.ReadWiimoteData());
-        //print(remoteL.Accel.GetCalibratedAccelData()[2]);
-        
-        //print(remoteL.Status.led[0] + ", " + remoteL.Status.led[1] + ", " + remoteL.Status.led[2] + ", " + remoteL.Status.led[3]);
-        
-
-        oldAccel = Vector3.zero;
-        newAccel = Vector3.zero;
-
         conRB = con.GetComponent<Rigidbody>();
-        conTR = con.GetComponent<Transform>();
+
+        receiver = transform.GetComponent<OSCReceiver>();
+        receiver.Bind("/message/accel/x", ReceiveAccel);
+        receiver.Bind("/message/accel/y", ReceiveAccel);
+        receiver.Bind("/message/accel/z", ReceiveAccel);
+        receiver.Bind("/message/accel/f", ReceiveAccel);
+
+        receiver.Bind("/message/gyro/pitch", ReceiveGyro);
+        receiver.Bind("/message/gyro/yaw", ReceiveGyro);
+        receiver.Bind("/message/gyro/roll", ReceiveGyro);
+        receiver.Bind("/message/gyro/f", ReceiveGyro);  
     }
 
     // Update is called once per frame
     void Update()
     {
-        
-        if (calCount < 3)
+        if (accelUpdated)
         {
-            if (enter.WasPerformedThisFrame())
-            {
-                remoteL.ReadWiimoteData();
-                print("LR: " + remoteL.Accel.GetCalibratedAccelData()[0] +
-                " UD: " + remoteL.Accel.GetCalibratedAccelData()[2] + 
-                " FB: " + remoteL.Accel.GetCalibratedAccelData()[1]);
-                print("Calibration for count " + calCount);
-                remoteL.ReadWiimoteData();
-                remoteL.Accel.CalibrateAccel((AccelCalibrationStep)calCount);
-                print("LR: " + remoteL.Accel.GetCalibratedAccelData()[0] +
-                " UD: " + remoteL.Accel.GetCalibratedAccelData()[2] + 
-                " FB: " + remoteL.Accel.GetCalibratedAccelData()[1]);
-                calCount++;
-            }
+            conRB.linearVelocity = new Vector3(accelData.x * Time.deltaTime * accelMod.x, 
+                accelData.y * Time.deltaTime * accelMod.y,
+                accelData.z * Time.deltaTime * accelMod.z);
+            
         }
-        else
+
+    }
+    protected void ReceiveAccel(OSCMessage message)
+    {
+        switch (message.Address)
         {
-            oldAccel = newAccel;
-            remoteL.ReadWiimoteData();
-            newAccel = new Vector3(remoteL.Accel.GetCalibratedAccelData()[0], remoteL.Accel.GetCalibratedAccelData()[2],
-                remoteL.Accel.GetCalibratedAccelData()[1]);
-
-            if (newAccel.magnitude > accelThreshold)
-            {
-                conRB.linearVelocity = new Vector3(newAccel.x * Time.deltaTime * speedMod.x, 
-                    newAccel.y * Time.deltaTime * speedMod.y,
-                    newAccel.z * Time.deltaTime * speedMod.z);
-            }
-            else
-            {
-                conRB.linearVelocity = Vector3.zero;
-                //conRB.rotation = Quaternion.Euler((newAccel.y - 1) * 90, (newAccel.x - 1) * 90, (newAccel.z - 1) * 90);
-                
-                //conTR.LookAt(conTR.position + new Vector3(newAccel.x, newAccel.y, newAccel.z), Vector3.up);
-            }
-            
-            print("LR: " + newAccel.x +
-                " UD: " + newAccel.y + 
-                " FB: " + newAccel.z);
-
-            if (enter.WasPerformedThisFrame())
-            {
-                conRB.position = Vector3.zero;
-            }
+            case "/message/accel/x":
+                accelData.x = message.Values[0].FloatValue;
+                break;
+            case "/message/accel/y":
+                accelData.y = message.Values[0].FloatValue;
+                break;
+            case "/message/accel/z":
+                accelData.z = message.Values[0].FloatValue;
+                break;
+            case "/message/accel/f":
+                accelUpdated = message.Values[0].BoolValue;
+                break;
+        }
         
-            
+    }
+
+
+    protected void ReceiveGyro(OSCMessage message)
+    {
+        switch (message.Address)
+        {
+            case "/message/gyro/pitch":
+                gyroData.x = message.Values[0].FloatValue;
+                break;
+            case "/message/gyro/yaw":
+                gyroData.y = message.Values[0].FloatValue;
+                break;
+            case "/message/gyro/roll":
+                gyroData.z = message.Values[0].FloatValue;
+                break;
+            case "/message/gyro/f":
+                gyroUpdated = message.Values[0].BoolValue;
+                break;
         }
         
     }
     void OnApplicationQuit()
     {
-        foreach(Wiimote remote in WiimoteManager.Wiimotes) {
-            WiimoteManager.Cleanup(remote);
-        }
+        
     }
 }
