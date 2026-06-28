@@ -1,0 +1,5 @@
+-r:System.ServiceProcess.dll
+-r:System.Windows.Forms.dll
+-r:System.Configuration.dll
+-r:Assets\WindowsInput.dll
+-r:System.Drawing.dll

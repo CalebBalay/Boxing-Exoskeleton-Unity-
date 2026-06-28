@@ -1,0 +1,20 @@
+{
+  "name": "com.tuatmcc.unityjoycon",
+  "version": "0.1.0",
+  "displayName": "UnityJoyCon",
+  "description": "UnityJoyCon is a library for using Joy-Con in Unity.",
+  "unity": "2022.3",
+  "author": {
+    "name": "TUATMCC",
+    "url": "https://github.com/tuatmcc"
+  },
+  "license": "MIT",
+  "keywords": [
+    "Joy-Con",
+    "Controller"
+  ],
+  "dependencies": {
+    "com.unity.inputsystem": "1.14.2"
+  },
+  "_fingerprint": "e00740932963c36b0a8725a9f44485092b730e8d"
+}
