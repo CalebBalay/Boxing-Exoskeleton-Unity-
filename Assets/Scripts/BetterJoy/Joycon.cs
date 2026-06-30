@@ -335,7 +335,7 @@ namespace BetterJoyForCemu {
         }
 
         public void getActiveData() {
-            this.activeData = form.activeCaliData(serial_number);
+            this.activeData = manager.activeCaliData(serial_number);
         }
 
         public void getActiveData(float[] data) {
@@ -1098,7 +1098,7 @@ namespace BetterJoyForCemu {
                     }
                 }
 
-                if (other == null && !isPro) { // single joycon mode; Z do not swap, rest do
+                if (true) {//(other == null && !isPro) { // single joycon mode; Z do not swap, rest do
                     if (isLeft) {
                         acc_g.X = -acc_g.X;
                         acc_g.Y = -acc_g.Y;

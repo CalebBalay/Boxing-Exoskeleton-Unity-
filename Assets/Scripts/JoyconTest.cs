@@ -37,11 +37,24 @@ public class JoyconTest : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        jcLRB.rotation = new Quaternion(
-            manager.j[0].AHRS.Quaternion[0], 
-            manager.j[0].AHRS.Quaternion[1], 
-            manager.j[0].AHRS.Quaternion[2], 
-            manager.j[0].AHRS.Quaternion[3]);
+        if (manager.j.Count > 0)
+        {
+            jcRRB.linearVelocity = new Vector3(
+                manager.j[0].GetAccel().X * Time.deltaTime * accelMod.x,
+                manager.j[0].GetAccel().Y * Time.deltaTime * accelMod.y,
+                manager.j[0].GetAccel().Z * Time.deltaTime * accelMod.z);
+            jcRRB.gameObject.transform.rotation = new Quaternion(
+                manager.j[0].AHRS.Quaternion[0],
+                manager.j[0].AHRS.Quaternion[1],
+                manager.j[0].AHRS.Quaternion[2],
+                manager.j[0].AHRS.Quaternion[3]).normalized;
+        }
+            
+            /*new Quaternion(
+                manager.j[0].AHRS.Quaternion[0], 
+                manager.j[0].AHRS.Quaternion[1], 
+                manager.j[0].AHRS.Quaternion[2], 
+                manager.j[0].AHRS.Quaternion[3]);*/
     }
 
     void OnApplicationQuit()

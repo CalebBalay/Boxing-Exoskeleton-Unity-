@@ -36,9 +36,9 @@ public class ManageJoycons {
         // MainForm
         public List<int> xG, yG, zG, xA, yA, zA;
         public List<KeyValuePair<string, float[]>> caliData;
-        private System.Windows.Forms.Timer countDown;
+        private System.Timers.Timer countDown;
         private int count;
-        public bool calibrate = true;
+        public bool calibrate = false;
         public bool allowCalibration = true;
 
         // Program
@@ -107,40 +107,75 @@ public class ManageJoycons {
         }
 
         // MainForm
+        public void StartCalibrate(object sender, EventArgs e) {
+            /*if (j.Count == 0) {
+                UnityEngine.Debug.Log("Please connect a single pro controller.");
+                return;
+            }
+            if (j.Count > 1) {
+                UnityEngine.Debug.Log("Please calibrate one controller at a time (disconnect others).");
+                return;
+            }*/
+            this.calibrate = true;
+            this.countDown = new System.Timers.Timer();
+            this.count = 10;
+            this.CountDown(null, null);
+            countDown.Elapsed += CountDown;
+            countDown.Interval = 1000;
+            countDown.Enabled = true;
+        }
+        private void CountDown(object sender, EventArgs e) {
+            if (this.count == 0) {
+                UnityEngine.Debug.Log("Calibrating...");
+                countDown.Stop();
+                this.StartGetData();
+            } else {
+                UnityEngine.Debug.Log("Plese keep the controller flat." + "\r\n");
+                UnityEngine.Debug.Log("Calibration will start in " + this.count + " seconds.");
+                this.count--;
+            }
+        }
         private void StartGetData() {
             this.xG.Clear(); this.yG.Clear(); this.zG.Clear();
             this.xA.Clear(); this.yA.Clear(); this.zA.Clear();
-            countDown = new System.Windows.Forms.Timer();
+            countDown = new System.Timers.Timer();
             this.count = 3;
-            this.calibrate = true;
-            countDown.Tick += new EventHandler(CalcData);
+            countDown.Elapsed += CalcData;
             countDown.Interval = 1000;
             countDown.Enabled = true;
         }
         private void CalcData(object sender, EventArgs e) {
             if (this.count == 0) {
                 countDown.Stop();
-                this.calibrate = false;
-                string serNum = Program.mgr.j.First().serial_number;
-                int serIndex = this.findSer(serNum);
-                float[] Arr = new float[6] { 0, 0, 0, 0, 0, 0 };
-                if (serIndex == -1) {
-                    this.caliData.Add(new KeyValuePair<string, float[]>(
-                         serNum,
-                         Arr
-                    ));
-                } else {
-                    Arr = this.caliData[serIndex].Value;
+                string serNum;
+                int serIndex;
+                float[] Arr;
+                for (int i = 1; i < j.Count; i++)
+                {
+                    serNum = j[i].serial_number;
+                    serIndex = this.findSer(serNum);
+                    Arr = new float[6] { 0, 0, 0, 0, 0, 0 };
+                    if (serIndex == -1) {
+                        this.caliData.Add(new KeyValuePair<string, float[]>(
+                            serNum,
+                            Arr
+                        ));
+                    } else {
+                        Arr = this.caliData[serIndex].Value;
+                    }
+                    System.Random rnd = new System.Random();
+                    Arr[0] = (float)quickselect_median(this.xG, rnd.Next);
+                    Arr[1] = (float)quickselect_median(this.yG, rnd.Next);
+                    Arr[2] = (float)quickselect_median(this.zG, rnd.Next);
+                    Arr[3] = (float)quickselect_median(this.xA, rnd.Next);
+                    Arr[4] = (float)quickselect_median(this.yA, rnd.Next);
+                    Arr[5] = (float)quickselect_median(this.zA, rnd.Next) - 4010; //Joycon.cs acc_sen 16384
+                    Config.SaveCaliData(this.caliData);
+                    j[i].getActiveData(activeCaliData(j[i].serial_number));
                 }
-                System.Random rnd = new System.Random();
-                Arr[0] = (float)quickselect_median(this.xG, rnd.Next);
-                Arr[1] = (float)quickselect_median(this.yG, rnd.Next);
-                Arr[2] = (float)quickselect_median(this.zG, rnd.Next);
-                Arr[3] = (float)quickselect_median(this.xA, rnd.Next);
-                Arr[4] = (float)quickselect_median(this.yA, rnd.Next);
-                Arr[5] = (float)quickselect_median(this.zA, rnd.Next) - 4010; //Joycon.cs acc_sen 16384
-                Config.SaveCaliData(this.caliData);
-                Program.mgr.j.First().getActiveData();
+                
+                this.calibrate = false;
+                UnityEngine.Debug.Log("Finished Calibrating.");
             } else {
                 this.count--;
             }
@@ -244,6 +279,8 @@ public class ManageJoycons {
         }
 
         public void CheckForNewControllers() {
+            if (this.calibrate)
+                return;
             // move all code for initializing devices here and well as the initial code from Start()
             bool isLeft = false;
             IntPtr ptr = HIDapi.hid_enumerate(0x0, 0x0);
@@ -373,6 +410,7 @@ public class ManageJoycons {
                         temp = null;    // repeat
                     }
                 }
+                StartCalibrate(null, null);
             }
 
             HIDapi.hid_free_enumeration(top_ptr);
@@ -380,10 +418,10 @@ public class ManageJoycons {
             bool on = true; //ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None).AppSettings.Settings["HomeLEDOn"].Value.ToLower() == "true";
             foreach (Joycon jc in j) { // Connect device straight away
                 if (jc.state == Joycon.state_.NOT_ATTACHED) {
-                    if (jc.out_xbox != null)
+                    /*if (jc.out_xbox != null)
                         jc.out_xbox.Connect();
                     if (jc.out_ds4 != null)
-                        jc.out_ds4.Connect();
+                        jc.out_ds4.Connect();*/
 
                     try {
                         jc.Attach();
@@ -396,7 +434,7 @@ public class ManageJoycons {
 
                     jc.Begin();
                     if (allowCalibration) {
-                        jc.getActiveData(activeCaliData(jc.serial_number));
+                        jc.getActiveData();
                     }
                 }
             }
