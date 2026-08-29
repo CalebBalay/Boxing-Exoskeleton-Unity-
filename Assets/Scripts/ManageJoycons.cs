@@ -37,7 +37,7 @@ public class ManageJoycons {
         public List<int> xG, yG, zG, xA, yA, zA;
         public List<KeyValuePair<string, float[]>> caliData;
         private System.Timers.Timer countDown;
-        private int count;
+        public int count;
         public bool calibrate = false;
         public bool allowCalibration = true;
 
