@@ -263,7 +263,6 @@ MonoBehaviour:
   jcLRB: {fileID: 1459682661}
   jcRRB: {fileID: 1761352957}
   accelMod: {x: 1, y: 1, z: 1}
-  captureDriftDuration: 1
 --- !u!4 &252319554
 Transform:
   m_ObjectHideFlags: 0
