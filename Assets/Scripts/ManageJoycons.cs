@@ -118,7 +118,7 @@ public class ManageJoycons {
             }*/
             this.calibrate = true;
             this.countDown = new System.Timers.Timer();
-            this.count = 10;
+            this.count = 2;
             this.CountDown(null, null);
             countDown.Elapsed += CountDown;
             countDown.Interval = 1000;

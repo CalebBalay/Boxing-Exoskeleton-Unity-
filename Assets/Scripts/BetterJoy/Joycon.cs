@@ -382,10 +382,29 @@ namespace BetterJoyForCemu {
             return stick2;
         }
         public System.Numerics.Vector3 GetGyro() {
+            CorrectCalibratedIMU();
             return gyr_g;
         }
         public System.Numerics.Vector3 GetAccel() {
+            CorrectCalibratedIMU();
             return acc_g;
+        }
+        public void CorrectCalibratedIMU()
+        {
+            if (-3.5f <= gyr_g.X && gyr_g.X <= 3.5f)
+                gyr_g.X = 0f;
+            if (-3.5f <= gyr_g.Y && gyr_g.Y <= 3.5f)
+                gyr_g.Y = 0f;
+            if (-3.5f <= gyr_g.Z && gyr_g.Z <= 3.5f)
+                gyr_g.Z = 0f;
+
+            if (Mathf.Sqrt(acc_g.X * acc_g.X + acc_g.Y * acc_g.Y + acc_g.Z * acc_g.Z) <= 1.5f &&
+                (gyr_g.X == 0 || gyr_g.Y == 0 || gyr_g.Z == 0))
+            {
+                acc_g.X = 0f;
+                acc_g.Y = 0f;
+                acc_g.Z = 0f;
+            }
         }
         public int Attach() {
             state = state_.ATTACHED;
@@ -1118,6 +1137,7 @@ namespace BetterJoyForCemu {
 
                 // Update rotation Quaternion
                 float deg_to_rad = 0.0174533f;
+                CorrectCalibratedIMU();
                 AHRS.Update(gyr_g.X * deg_to_rad, gyr_g.Y * deg_to_rad, gyr_g.Z * deg_to_rad, acc_g.X, acc_g.Y, acc_g.Z);
             }
         }
